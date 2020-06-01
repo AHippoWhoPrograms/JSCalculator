@@ -1,8 +1,56 @@
 const MAX_BOXES = 20;
+
 var keyboard = document.querySelector("#calculator > #components > #keyboard");
 var input = document.querySelector("#calculator > #components > #textbox");
 
 keyboard.style.gridTemplateColumns = "1fr 1fr 1fr 1fr";
+
+
+
+function calculateExpression(expression, operators)
+{
+    var expArray = expression.split(" ");
+
+    for(var i = 0; i < expArray.length; i++)
+    {
+        if(operators.indexOf(expArray[i]) !== -1)
+        {
+            var operator = expArray[i];
+            var operand1 = parseInt(expArray[i - 2]);
+            var operand2 = parseInt(expArray[i - 1]);
+            var result = 0;
+
+            //turn operands to integers and results to strings.
+            if(operator === "+") result = (operand1 + operand2).toString();
+            else if(operator === "-") result = (operand1 - operand2).toString();
+            else if(operator === "*") result = (operand1 * operand2).toString();
+            else if(operator === "/") result = (operand1 / operand2).toString();
+
+            expArray.splice(i - 2, 3, result);
+            i += -3;
+        }
+    }
+    return expArray[0];
+}
+
+function checkParenthesesPairing(input_string)
+{
+    var test_arr = input_string.split("");
+    var stack = [];
+    
+    for(var i = 0; i < input_string.length; i++)
+    {
+        if(test_arr[i] === "(") stack.push(test_arr[i]);
+        else if(test_arr[i] === ")")
+        {
+            if(stack.length > 0) stack.pop();
+            else return false;
+        } 
+    }
+
+    if(stack.length === 0) return true;
+    else return false;
+}
 
 function evaluateExpression()
 {
@@ -15,7 +63,9 @@ function evaluateExpression()
     var operators = ["*", "+", "-", "/", "(", ")"];
     var isOperand = true;
     var isOperator = false;
+
     if(pattern.test(input_str) === false) return "Not a valid expression!";
+    if(checkParenthesesPairing(input_str) === false) return "Incorrect parentheses pairing";
 
     for(var input_str_itr = 0; input_str_itr < input_str.length; input_str_itr++)
     {
@@ -76,9 +126,7 @@ function evaluateExpression()
         queue.push(" ");
         queue.push(stack.pop());
     }
-    return queue.join("");
-    
-
+    return calculateExpression(queue.join(""), operators);
 }
 
 for(var i = 0; i < MAX_BOXES; i++)
@@ -166,21 +214,22 @@ for(var i = 0; i < MAX_BOXES; i++)
             button.textContent = "=";
             button.setAttribute("data-key", "13");
     }
-
+    
     keyboard.appendChild(button);
 }
+
+//buttons were not added until later, so kbuttons is declared here instead of on in the beginning.
+const kbuttons = document.querySelectorAll(".kbutton");
 
 window.addEventListener('keydown', (e) =>
 {
     var keyCode = e.keyCode;
     if(keyCode === 191) keyCode = 47;
-    else if(keyCode === 187) keyCode = 43;
+    else if(e.shiftKey === true && keyCode === 187) keyCode = 43;
     else if(keyCode === 189) keyCode = 45;
     else if(e.shiftKey === true && keyCode === 56) keyCode = 42;
     const key = document.querySelector(`.kbutton[data-key="${keyCode}"]`);
-    
-    console.log(key);
-    console.log(e.keyCode)
+
     if(!key) return;
 
     key.classList.add("kbutton_pressed");
@@ -191,12 +240,12 @@ window.addEventListener('keydown', (e) =>
         this.classList.remove("kbutton_pressed");
         if(this.textContent === "=") console.log(evaluateExpression());
     }
-    const kbuttons = document.querySelectorAll(".kbutton");
+    
 
-    kbuttons.forEach(kb => 
+    for(var kbuttons_i = 0; kbuttons_i < kbuttons.length; kbuttons_i++)
     {
-        kb.addEventListener('transitionend', removeTransition);
-    });
+        kbuttons[kbuttons_i].addEventListener("transitionend", removeTransition);
+    }
     if(key.textContent !== "=") input.setAttribute('value', input.getAttribute('value') + String.fromCharCode(keyCode));
 });
 
